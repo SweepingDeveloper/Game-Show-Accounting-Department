@@ -25,49 +25,83 @@ include 'mysql_login.php';
 $get_show = $_GET['show_name'];
 //$show = $mysqli->real_escape_string($get_show);
 //$prizequery = "SELECT * FROM prizes WHERE `show_name` = REPLACE(\"". $get_show."\", \"'\", \"''\") ORDER BY airdate ASC";
-$prizequery = "SELECT * FROM prizes WHERE `show_name` = \"".$get_show."\" ORDER BY airdate ASC";
-//echo $prizequery."\n";
-mysqli_query($db, $prizequery) or die('Error querying database.');
 
 
-$prizeresult = mysqli_query($db, $prizequery);
+$yearquery = "SELECT DISTINCT SUBSTRING(`airdate`,1,4) FROM sdevelop_youtube.prizes WHERE `show_name` = \"".$get_show."\" ORDER BY SUBSTRING(`airdate`,1,4) ASC";
+$yearresult = mysqli_query($db, $yearquery);
+$yeararray = [];
 ?>
-
-<table border='1' align="center">
-
-<tr>
-	<td><b>Show</b></td>
-	<td><b>Airdate</b></td>
-	<td><b>Contestant</b></td>
-	<td><b>Prize</b></td>
-	<td><b>Value</b></td>
-	<td><b>Comments</b></td>
-	<td><b>Source</b></td>
-</tr>
 
 <?php
+	echo "<h1>".$get_show."</h1>";
 
-while ($prizerow = mysqli_fetch_array($prizeresult)) {
-	$contestantquery = "SELECT * FROM contestants WHERE ID = ".$prizerow['contestant_id']; 
-	$contestantresult = mysqli_query($db, $contestantquery);
-	$contestantrow = mysqli_fetch_array($contestantresult);
+	while ($yearrow = mysqli_fetch_array($yearresult))	
+														
+	{
+		array_push($yeararray, $yearrow[0]);
+	}
+	
+	echo "<p align='center'>";
 
-	echo '<tr><td>' . $prizerow['show_name'] . '</td>'
-     	.'<td>'     . $prizerow['airdate']   . '</td>'
-		.'<td><a href="get_contestant.php?player_id='.$prizerow['contestant_id'].'">'     . $contestantrow['firstname'] . ' ' . $contestantrow['lastname'] . '</a></td>'
-		.'<td>'     . $prizerow['description'] . '</td>'
-.'<td align="right">$'    . number_format($prizerow['value']) . '</td>'
-.'<td>'.$prizerow['comments'].'</td>'
-.'<td><a href="'.$prizerow['source'].'" target="new">Source</a></td></tr>';
-	  
-	  
-}
-//Step 4
-mysqli_close($db);
+	for ($a = 0; $a < sizeof($yeararray); $a++)
+	{
+		echo "<a href='#y".$yeararray[$a]."'>".$yeararray[$a]."</a>";
+		if ($a < sizeof($yeararray) - 1)
+		{
+			echo " . ";
+		}
+	}
+	
+	echo "</p>";
+
+	
+	for ($a = 0; $a < sizeof($yeararray); $a++)
+	{
+		
+		$prizequery = "SELECT * FROM prizes WHERE `show_name` = \"".$get_show."\" AND SUBSTRING(`airdate`,1,4) = '".$yeararray[$a]."' ORDER BY airdate ASC";
+		mysqli_query($db, $prizequery) or die('Error querying database.');
+		$prizeresult = mysqli_query($db, $prizequery);
+
+		echo "<div id='y".$yeararray[$a]."'></div>";
+		echo "<h2>".$yeararray[$a]."</h2>";
+		
+		echo "<table border='1' align='center'>";
+
+		echo "<tr>
+			  <td><b>Show</b></td>
+			  <td><b>Airdate</b></td>
+			  <td><b>Contestant</b></td>
+			  <td><b>Prize</b></td>
+			  <td><b>Value</b></td>
+			  <td><b>Comments</b></td>
+			  <td><b>Source</b></td>
+			  </tr>";
+
+
+
+		while ($prizerow = mysqli_fetch_array($prizeresult)) 
+		{
+			$contestantquery = "SELECT * FROM contestants WHERE ID = ".$prizerow['contestant_id']; 
+			$contestantresult = mysqli_query($db, $contestantquery);
+			$contestantrow = mysqli_fetch_array($contestantresult);
+
+			echo '<tr><td>' . $prizerow['show_name'] . '</td>'
+				.'<td>'     . $prizerow['airdate']   . '</td>'
+				.'<td><a href="get_contestant.php?player_id='.$prizerow['contestant_id'].'">'     . $contestantrow['firstname'] . ' ' . $contestantrow['lastname'] . '</a></td>'
+				.'<td>'     . $prizerow['description'] . '</td>'
+			.'<td align="right">$'    . number_format($prizerow['value']) . '</td>'
+			.'<td>'.$prizerow['comments'].'</td>'
+			.'<td><a href="'.$prizerow['source'].'" target="new">Source</a></td></tr>';
+				
+		}
+		
+		echo "</table>";
+	}
+	
+	//Step 4
+	mysqli_close($db);
 ?>
 
-
-</table>	
 
 	
 
